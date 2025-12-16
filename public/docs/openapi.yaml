@@ -1,0 +1,3176 @@
+openapi: 3.1.0
+info:
+  title: Hobbyist Decals E-commerce API
+  description: |
+    Complete API documentation for the Hobbyist Decals e-commerce platform.
+    This API provides endpoints for products, cart, orders, reviews, user management, and admin operations.
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@hobbyistdecals.com
+
+servers:
+  - url: https://new-hobbyist-decals-website.vercel.app
+    description: Live Vercel Deployment
+  - url: https://hobbyistdecals.in
+    description: Production Server
+  - url: http://localhost:3001
+    description: Local Backend (Port 3001)
+  - url: http://localhost:3000
+    description: Local Backend (Port 3000 - Only use if API runs here)
+
+tags:
+  - name: Auth
+    description: Authentication and user management
+  - name: Products
+    description: Product catalog operations
+  - name: Categories
+    description: Product categories
+  - name: Cart
+    description: Shopping cart operations
+  - name: Orders
+    description: Order management
+  - name: Payments
+    description: Payment processing
+  - name: Reviews
+    description: Product reviews and ratings
+  - name: Address
+    description: User address management
+  - name: Profile
+    description: User profile operations
+  - name: Admin
+    description: Admin operations (requires admin/manager role)
+  - name: Admin Products
+    description: Admin product management
+  - name: Admin Analytics
+    description: Analytics and reporting
+  - name: Admin Gallery
+    description: Custom decal gallery management
+  - name: Admin Coupons
+    description: Discount code management
+  - name: Admin Users
+    description: User role management
+  - name: Blogs
+    description: Blog posts
+  - name: Contact
+    description: Contact form submissions
+  - name: Gallery
+    description: Public gallery
+  - name: Features
+    description: Site features (popups, featured products)
+  - name: Checkout
+    description: Checkout and payment processing
+  - name: Affiliate
+    description: Public affiliate program
+  - name: Admin Analytics
+    description: Admin analytics dashboard
+  - name: Admin Loyalty
+    description: Admin loyalty program management
+  - name: Admin Shipping
+    description: Admin shipping configuration
+
+  - name: Quote
+    description: Custom decal quote requests
+
+components:
+  securitySchemes:
+    ClerkAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Clerk authentication token
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: "Error message"
+
+    Success:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Operation successful"
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Truck Decal Set"
+        sku:
+          type: string
+          nullable: true
+          example: "HD123456"
+        price:
+          type: string
+          example: "14.50"
+        image:
+          type: string
+          nullable: true
+          example: "/uploads/products/image.jpg"
+        category:
+          type: string
+          example: "Truck Decals"
+        tags:
+          type: array
+          items:
+            type: string
+          example: ["featured"]
+
+    ProductDetails:
+      allOf:
+        - $ref: '#/components/schemas/Product'
+        - type: object
+          properties:
+            description:
+              type: string
+            scales:
+              type: array
+              items:
+                type: object
+                properties:
+                  scale_id:
+                    type: integer
+                  scale_name:
+                    type: string
+                  additional_price:
+                    type: number
+            materials:
+              type: array
+              items:
+                type: object
+                properties:
+                  material_id:
+                    type: integer
+                  material_type:
+                    type: string
+                  additional_price:
+                    type: number
+            variations:
+              type: array
+              items:
+                type: object
+                properties:
+                  variation_id:
+                    type: integer
+                  variation_name:
+                    type: string
+                  additional_price:
+                    type: number
+
+    Category:
+      type: object
+      properties:
+        category_id:
+          type: integer
+        name:
+          type: string
+        image:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        product_count:
+          type: integer
+
+    CartItem:
+      type: object
+      properties:
+        cart_item_id:
+          type: integer
+          nullable: true
+        variant_id:
+          type: integer
+          nullable: true
+        product_id:
+          type: integer
+        product_name:
+          type: string
+        product_image:
+          type: string
+        quantity:
+          type: integer
+        base_price:
+          type: number
+        final_price:
+          type: number
+        variant_details:
+          type: object
+          properties:
+            scale_name:
+              type: string
+              nullable: true
+            material_type:
+              type: string
+              nullable: true
+            variation_name:
+              type: string
+              nullable: true
+
+    Cart:
+      type: object
+      properties:
+        cart_id:
+          type: integer
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        subtotal:
+          type: number
+        shipping_amount:
+          type: number
+        discount_amount:
+          type: number
+        total_amount:
+          type: number
+        coupon_code:
+          type: string
+          nullable: true
+
+    Order:
+      type: object
+      properties:
+        order_id:
+          type: integer
+        order_code:
+          type: string
+        total_amount:
+          type: number
+        shipping_amount:
+          type: number
+        total_discount:
+          type: number
+        order_status:
+          type: string
+          enum: [pending, shipped, delivered, cancelled]
+        payment_status:
+          type: string
+          enum: [unpaid, paid, refunded]
+        payment_method:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              order_item_id:
+                type: integer
+              product_id:
+                type: integer
+              product_name:
+                type: string
+              product_image:
+                type: string
+              quantity:
+                type: integer
+              base_price:
+                type: number
+              final_price:
+                type: number
+              review:
+                type: object
+                properties:
+                  has_review:
+                    type: boolean
+                  rating:
+                    type: integer
+                    nullable: true
+                  comments:
+                    type: string
+                    nullable: true
+
+    Review:
+      type: object
+      properties:
+        review_id:
+          type: integer
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comments:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        user:
+          type: object
+          properties:
+            user_id:
+              type: integer
+            name:
+              type: string
+            email:
+              type: string
+            image:
+              type: string
+              nullable: true
+
+    ReviewStats:
+      type: object
+      properties:
+        total_reviews:
+          type: integer
+        avg_rating:
+          type: number
+        five_star:
+          type: integer
+        four_star:
+          type: integer
+        three_star:
+          type: integer
+        two_star:
+          type: integer
+        one_star:
+          type: integer
+
+    Address:
+      type: object
+      properties:
+        address_id:
+          type: integer
+        full_name:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        company_name:
+          type: string
+          nullable: true
+        country:
+          type: string
+          nullable: true
+        street_address:
+          type: string
+          nullable: true
+        city:
+          type: string
+          nullable: true
+        state:
+          type: string
+          nullable: true
+        postal_code:
+          type: string
+          nullable: true
+        is_default:
+          type: boolean
+        address_type:
+          type: string
+          enum: [billing, shipping]
+          nullable: true
+
+    User:
+      type: object
+      properties:
+        user_id:
+          type: integer
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        image:
+          type: string
+          nullable: true
+
+    Coupon:
+      type: object
+      properties:
+        discount_id:
+          type: integer
+        code:
+          type: string
+        discount_percent:
+          type: number
+          nullable: true
+        valid_from:
+          type: string
+          format: date-time
+          nullable: true
+        valid_to:
+          type: string
+          format: date-time
+          nullable: true
+        max_uses:
+          type: integer
+          nullable: true
+        used_count:
+          type: integer
+        is_active:
+          type: boolean
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+        hasMore:
+          type: boolean
+
+    Affiliate:
+      type: object
+      properties:
+        affiliate_id:
+          type: integer
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        website_url:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [pending, approved, rejected, suspended]
+        commission_rate:
+          type: number
+        total_earnings:
+          type: number
+        available_balance:
+          type: number
+
+    Blog:
+      type: object
+      properties:
+        blog_id:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        author_name:
+          type: string
+          nullable: true
+        cover_image_url:
+          type: string
+        category_name:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [published, draft]
+        created_at:
+          type: string
+          format: date-time
+
+    Subscriber:
+      type: object
+      properties:
+        subscriber_id:
+          type: integer
+        email:
+          type: string
+        is_active:
+          type: boolean
+        unsubscribed_at:
+          type: string
+          format: date-time
+          nullable: true
+        source:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    Banner:
+      type: object
+      properties:
+        banner_id:
+          type: integer
+        image_url:
+          type: string
+        title:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        link_url:
+          type: string
+          nullable: true
+        display_order:
+          type: integer
+        status:
+          type: string
+          enum: [active, inactive]
+
+    ContactRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        message:
+          type: string
+
+    GalleryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        image_url:
+          type: string
+        display_order:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    Popup:
+      type: object
+      properties:
+        popup_id:
+          type: integer
+        title:
+          type: string
+        image_url:
+          type: string
+        link_url:
+          type: string
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+
+    FeaturedProduct:
+      type: object
+      properties:
+        product_id:
+          type: integer
+        name:
+          type: string
+        sku:
+          type: string
+        price:
+          type: string
+        image:
+          type: string
+        category:
+          type: string
+        tag:
+          type: string
+
+    LoyaltyCampaign:
+      type: object
+      properties:
+        campaign_id:
+          type: integer
+        product_id:
+          type: integer
+          nullable: true
+        product_name:
+          type: string
+          nullable: true
+        product_sku:
+          type: string
+          nullable: true
+        multiplier:
+          type: number
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+          nullable: true
+        is_active:
+          type: boolean
+        campaign_name:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ShiprocketRate:
+      type: object
+      properties:
+        courier_company_id:
+          type: integer
+        courier_name:
+          type: string
+        rate:
+          type: number
+          description: Cost in USD
+        rate_inr:
+          type: number
+          description: Cost in INR
+        cod_charges:
+          type: number
+        freight_charge:
+          type: number
+        etd:
+          type: string
+        estimated_delivery_days:
+          type: integer
+          nullable: true
+        rating:
+          type: number
+          nullable: true
+        min_weight:
+          type: number
+        qc_courier:
+          type: boolean
+
+    AffiliateStats:
+      type: object
+      properties:
+        total_clicks:
+          type: integer
+        total_visits:
+          type: integer
+        total_conversions:
+          type: integer
+        total_earnings:
+          type: number
+        available_balance:
+          type: number
+        paid_balance:
+          type: number
+        pending_commissions:
+          type: integer
+        approved_commissions:
+          type: integer
+
+    QuoteRequest:
+      type: object
+      required:
+        - firstName
+        - email
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        subject:
+          type: string
+        quantity:
+          type: integer
+        message:
+          type: string
+        file:
+          type: string
+          format: binary
+          description: Design file (max 10MB)
+
+    AdminCustomer:
+      type: object
+      properties:
+        user_id:
+          type: integer
+        name:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        image:
+          type: string
+          nullable: true
+        clerk_id:
+          type: string
+          nullable: true
+        is_logged_in:
+          type: boolean
+        orders_count:
+          type: integer
+        total_spent:
+          type: number
+        last_order_date:
+          type: string
+          format: date-time
+        loyalty_points_balance:
+          type: number
+        loyalty_points_total_earned:
+          type: number
+        loyalty_points_total_redeemed:
+          type: number
+        created_at:
+          type: string
+          format: date-time
+
+    AdminOrder:
+      type: object
+      properties:
+        order_id:
+          type: integer
+        order_code:
+          type: string
+        customer:
+          type: object
+          properties:
+            user_id:
+              type: integer
+              nullable: true
+            name:
+              type: string
+            email:
+              type: string
+              nullable: true
+            phone:
+              type: string
+              nullable: true
+        total_amount:
+          type: number
+        shipping_amount:
+          type: number
+        total_discount:
+          type: number
+        order_status:
+          type: string
+          enum: [pending, processing, shipped, delivered, cancelled, returned]
+        payment_status:
+          type: string
+          enum: [pending, paid, failed, refunded]
+        payment_method:
+          type: string
+        order_note:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        billingAddress:
+          $ref: '#/components/schemas/Address'
+
+    CheckoutRequest:
+      type: object
+      required:
+        - billing_first_name
+        - billing_last_name
+        - billing_email
+        - billing_phone
+        - billing_street_address
+        - billing_city
+        - billing_state
+        - billing_postal_code
+        - billing_country
+        - payment_method
+        - shipping_method
+      properties:
+        billing_first_name:
+          type: string
+        billing_last_name:
+          type: string
+        billing_email:
+          type: string
+        billing_phone:
+          type: string
+        billing_street_address:
+          type: string
+        billing_city:
+          type: string
+        billing_state:
+          type: string
+        billing_postal_code:
+          type: string
+        billing_country:
+          type: string
+        shipping_is_billing:
+          type: boolean
+          default: true
+        payment_method:
+          type: string
+          enum: [pay_on_delivery, payglocal, paypal]
+        shipping_method:
+          type: string
+          enum: [shiprocket, manual]
+        courier_selection:
+          type: object
+          properties:
+            courier_company_id:
+              type: integer
+            courier_name:
+              type: string
+            shipping_rate:
+              type: number
+        shipping_amount:
+          type: number
+        order_note:
+          type: string
+        shipping_first_name:
+          type: string
+        shipping_last_name:
+          type: string
+        shipping_street_address:
+          type: string
+        shipping_city:
+          type: string
+        shipping_state:
+          type: string
+        shipping_postal_code:
+          type: string
+
+    AffiliateApplication:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - email
+        - promotionMethod
+        - paypalEmail
+        - notes
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        websiteUrl:
+          type: string
+        socialMediaHandle:
+          type: string
+        promotionMethod:
+          type: string
+        paypalEmail:
+          type: string
+        notes:
+          type: string
+
+    ShippingRate:
+      type: object
+      properties:
+        id:
+          type: integer
+        location_id:
+          type: integer
+        weight_band_id:
+          type: integer
+        rate_inr:
+          type: number
+        effective_from:
+          type: string
+          format: date-time
+        effective_to:
+          type: string
+          format: date-time
+          nullable: true
+        is_active:
+          type: boolean
+        notes:
+          type: string
+          nullable: true
+        shippingAddress:
+          $ref: '#/components/schemas/Address'
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              order_item_id:
+                type: integer
+              product_id:
+                type: integer
+                nullable: true
+              product_name:
+                type: string
+              product_image:
+                type: string
+              product_sku:
+                type: string
+                nullable: true
+              quantity:
+                type: integer
+              base_price:
+                type: number
+              final_price:
+                type: number
+              variant_details:
+                type: object
+                properties:
+                  scale:
+                    type: string
+                    nullable: true
+                  material:
+                    type: string
+                    nullable: true
+                  variation:
+                    type: string
+                    nullable: true
+        payment:
+          type: object
+          nullable: true
+          properties:
+            payment_id:
+              type: integer
+            provider:
+              type: string
+            amount:
+              type: number
+            status:
+              type: string
+            created_at:
+              type: string
+              format: date-time
+        shipment:
+          type: object
+          nullable: true
+          properties:
+            shipment_id:
+              type: integer
+            tracking_id:
+              type: string
+              nullable: true
+            shipment_status:
+              type: string
+            provider:
+              type: string
+
+
+security:
+  - ClerkAuth: []
+
+paths:
+  # ========================================================================
+  # PRODUCTS
+  # ========================================================================
+  /api/product:
+    get:
+      tags:
+        - Products
+      summary: Get all products
+      description: Fetch paginated list of active products with optional category filtering
+      security: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Page number
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 12
+            maximum: 50
+          description: Items per page
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Filter by category name
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '500':
+          description: Server error
+  /api/product/details:
+    get:
+      tags:
+        - Products
+      summary: Get product details
+      description: Fetch detailed product information including scales, materials, and variations
+      security: []
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Product name
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetails'
+        '400':
+          description: Missing product name
+        '404':
+          description: Product not found
+        '500':
+          description: Server error
+
+  # ========================================================================
+  # CATEGORIES
+  # ========================================================================
+  /api/categories:
+    get:
+      tags:
+        - Categories
+      summary: Get all categories
+      description: Fetch all product categories with product counts
+      security: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  categories:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Category'
+        '500':
+          description: Server error
+
+  # ========================================================================
+  # CART
+  # ========================================================================
+  /api/cart/get:
+    get:
+      tags:
+        - Cart
+      summary: Get user cart
+      description: Retrieve the user's cart with all items. Works for both authenticated and guest users.
+      security: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  isAuthenticated:
+                    type: boolean
+                  cart:
+                    $ref: '#/components/schemas/Cart'
+        '500':
+          description: Server error
+
+  /api/cart/add:
+    post:
+      tags:
+        - Cart
+      summary: Add item to cart
+      description: Add a product variant to the cart. Creates variant if it doesn't exist.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - product_id
+                - quantity
+              properties:
+                product_id:
+                  type: integer
+                variant_id:
+                  type: integer
+                scale_id:
+                  type: integer
+                material_id:
+                  type: integer
+                variation_id:
+                  type: integer
+                quantity:
+                  type: integer
+                  minimum: 1
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  isAuthenticated:
+                    type: boolean
+                  cart_item:
+                    $ref: '#/components/schemas/CartItem'
+                  message:
+                    type: string
+        '400':
+          description: Invalid request
+        '404':
+          description: Product not found
+        '500':
+          description: Server error
+
+  /api/cart/update:
+    post:
+      tags:
+        - Cart
+      summary: Update cart item quantity
+      description: Update the quantity of an item in the cart
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - cart_item_id
+                - quantity
+              properties:
+                cart_item_id:
+                  type: integer
+                quantity:
+                  type: integer
+                  minimum: 1
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Invalid request
+        '404':
+          description: Cart item not found
+        '500':
+          description: Server error
+
+  /api/cart/remove:
+    post:
+      tags:
+        - Cart
+      summary: Remove item from cart
+      description: Remove an item from the cart
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - cart_item_id
+              properties:
+                cart_item_id:
+                  type: integer
+      responses:
+        '200':
+          description: Success
+        '404':
+          description: Cart item not found
+        '500':
+          description: Server error
+
+  /api/cart/coupon/apply:
+    post:
+      tags:
+        - Cart
+      summary: Apply coupon code
+      description: Apply a discount coupon to the cart
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+              properties:
+                code:
+                  type: string
+                subtotal:
+                  type: number
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  discount_amount:
+                    type: number
+                  coupon:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                      discount_percent:
+                        type: number
+        '400':
+          description: Invalid coupon or expired
+        '404':
+          description: Coupon not found
+        '500':
+          description: Server error
+
+  /api/cart/coupon/remove:
+    post:
+      tags:
+        - Cart
+      summary: Remove coupon from cart
+      description: Remove applied coupon from the cart
+      security: []
+      responses:
+        '200':
+          description: Success
+        '500':
+          description: Server error
+
+  # ========================================================================
+  # ORDERS
+  # ========================================================================
+  /api/profile/orders:
+    get:
+      tags:
+        - Orders
+      summary: Get user orders
+      description: Fetch user's orders with optional filters
+      parameters:
+        - name: filter
+          in: query
+          schema:
+            type: string
+            enum: [all, buy_again, not_shipped, cancelled]
+            default: all
+          description: Filter orders by status
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Page number
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: Items per page
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  orders:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Order'
+                  pagination:
+                    type: object
+                    properties:
+                      currentPage:
+                        type: integer
+                      totalPages:
+                        type: integer
+                      totalCount:
+                        type: integer
+                      itemsPerPage:
+                        type: integer
+        '401':
+          description: Unauthorized
+        '500':
+          description: Server error
+
+  /api/profile/orders/{orderId}:
+    get:
+      tags:
+        - Orders
+      summary: Get order details
+      description: Fetch detailed information about a specific order
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Unauthorized
+        '404':
+          description: Order not found
+        '500':
+          description: Server error
+
+  /api/profile/orders/{orderId}/track:
+    get:
+      tags:
+        - Orders
+      summary: Track order
+      description: Get tracking information for an order
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Unauthorized
+        '404':
+          description: Order not found
+
+  /api/profile/orders/{orderId}/return:
+    post:
+      tags:
+        - Orders
+      summary: Request order return
+      description: Submit a return request for an order
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                comments:
+                  type: string
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Unauthorized
+        '404':
+          description: Order not found
+
+  /api/profile/orders/{orderId}/invoice:
+    get:
+      tags:
+        - Orders
+      summary: Get order invoice
+      description: Generate invoice data for an order
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Unauthorized
+        '404':
+          description: Order not found
+
+  # ========================================================================
+  # CHECKOUT & PAYMENTS
+  # ========================================================================
+  /api/checkout/process:
+    post:
+      tags:
+        - Payments
+      summary: Process checkout
+      description: Create an order from the cart and initiate payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  order_id:
+                    type: integer
+                  order_code:
+                    type: string
+                  payment_intent_id:
+                    type: string
+                    nullable: true
+                  session_id:
+                    type: string
+                    nullable: true
+                  transaction_id:
+                    type: string
+                    nullable: true
+                  redirect_url:
+                    type: string
+                    nullable: true
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Cart not found
+        '500':
+          description: Server error
+
+  /api/checkout/confirm-payment:
+    post:
+      tags:
+        - Payments
+      summary: Confirm payment
+      description: Confirm payment completion after payment gateway callback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - order_id
+                - payment_status
+              properties:
+                order_id:
+                  type: integer
+                payment_status:
+                  type: string
+                transaction_id:
+                  type: string
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Order not found
+
+  # ========================================================================
+  # REVIEWS
+  # ========================================================================
+  /api/reviews:
+    get:
+      tags:
+        - Reviews
+      summary: Get product reviews
+      description: Fetch reviews for a product with pagination and rating filter
+      security: []
+      parameters:
+        - name: productId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: rating
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 5
+          description: Filter by rating
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 50
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  reviews:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Review'
+                  stats:
+                    $ref: '#/components/schemas/ReviewStats'
+                  pagination:
+                    type: object
+                    properties:
+                      currentPage:
+                        type: integer
+                      totalPages:
+                        type: integer
+                      totalCount:
+                        type: integer
+                      itemsPerPage:
+                        type: integer
+        '400':
+          description: Missing product ID
+        '500':
+          description: Server error
+
+    post:
+      tags:
+        - Reviews
+      summary: Create or update review
+      description: Submit a review for a product. Only allowed if user has purchased and received the product.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - productId
+                - rating
+              properties:
+                productId:
+                  type: integer
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                comments:
+                  type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  review_id:
+                    type: integer
+                  is_update:
+                    type: boolean
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '403':
+          description: User has not purchased this product
+        '500':
+          description: Server error
+
+  /api/reviews/my-review:
+    get:
+      tags:
+        - Reviews
+      summary: Get user's review for a product
+      description: Fetch the current user's review for a specific product
+      parameters:
+        - name: productId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  review:
+                    $ref: '#/components/schemas/Review'
+                    nullable: true
+        '401':
+          description: Unauthorized
+        '500':
+          description: Server error
+
+  # ========================================================================
+  # ADDRESS
+  # ========================================================================
+  /api/profile/address:
+    get:
+      tags:
+        - Address
+      summary: Get user addresses
+      description: Fetch all shipping addresses for the authenticated user
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  addresses:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Address'
+        '401':
+          description: Unauthorized
+        '500':
+          description: Server error
+
+    post:
+      tags:
+        - Address
+      summary: Create address
+      description: Create a new shipping address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - full_name
+              properties:
+                full_name:
+                  type: string
+                phone:
+                  type: string
+                company_name:
+                  type: string
+                country:
+                  type: string
+                street_address:
+                  type: string
+                city:
+                  type: string
+                state:
+                  type: string
+                postal_code:
+                  type: string
+                is_default:
+                  type: boolean
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  address:
+                    $ref: '#/components/schemas/Address'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Server error
+
+  /api/profile/address/{id}:
+    put:
+      tags:
+        - Address
+      summary: Update address
+      description: Update an existing address
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                full_name:
+                  type: string
+                phone:
+                  type: string
+                company_name:
+                  type: string
+                country:
+                  type: string
+                street_address:
+                  type: string
+                city:
+                  type: string
+                state:
+                  type: string
+                postal_code:
+                  type: string
+                is_default:
+                  type: boolean
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Address not found
+        '500':
+          description: Server error
+
+    delete:
+      tags:
+        - Address
+      summary: Delete address
+      description: Delete an address
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Unauthorized
+        '404':
+          description: Address not found
+        '500':
+          description: Server error
+
+  /api/profile/address/{id}/set-default:
+    post:
+      tags:
+        - Address
+      summary: Set default address
+      description: Set an address as the default shipping address
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Unauthorized
+        '404':
+          description: Address not found
+        '500':
+          description: Server error
+
+  # ========================================================================
+  # PROFILE
+  # ========================================================================
+  /api/profile/user:
+    get:
+      tags:
+        - Profile
+      summary: Get user profile
+      description: Fetch the authenticated user's profile information
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+        '404':
+          description: User not found
+        '500':
+          description: Server error
+
+  /api/profile/user/role:
+    get:
+      tags:
+        - Profile
+      summary: Get user role
+      description: Get the current user's role (admin, manager, customer)
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  role:
+                    type: string
+                    enum: [admin, manager, customer]
+        '401':
+          description: Unauthorized
+        '500':
+          description: Server error
+
+  # ========================================================================
+  # QUOTE
+  # ========================================================================
+  /api/quote:
+    post:
+      tags:
+        - Quote
+      summary: Submit quote request
+      description: Submit a custom decal design quote request
+      security: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/QuoteRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  quote_id:
+                    type: integer
+        '400':
+          description: Invalid request
+        '500':
+          description: Server error
+
+  # ========================================================================
+  # ADMIN - PRODUCTS
+  # ========================================================================
+  /api/admin/products:
+    get:
+      tags:
+        - Admin Products
+      summary: List products (Admin)
+      description: Get paginated list of products with optional search
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 100
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: category_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Admin/Manager access required
+        '500':
+          description: Server error
+
+    post:
+      tags:
+        - Admin Products
+      summary: Create product (Admin)
+      description: Create a new product with optional image upload
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - name
+                - price
+              properties:
+                name:
+                  type: string
+                sku:
+                  type: string
+                short_description:
+                  type: string
+                long_description:
+                  type: string
+                price:
+                  type: string
+                category_id:
+                  type: string
+                in_stock:
+                  type: string
+                tag:
+                  type: string
+                images:
+                  type: string
+                  format: binary
+                selectedScales:
+                  type: string
+                selectedMaterials:
+                  type: string
+                selectedVariations:
+                  type: string
+      responses:
+        '201':
+          description: Product created
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Server error
+
+  /api/admin/products/{productId}:
+    get:
+      tags:
+        - Admin Products
+      summary: Get product (Admin)
+      description: Fetch a single product by ID
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Unauthorized
+        '404':
+          description: Product not found
+        '500':
+          description: Server error
+
+    put:
+      tags:
+        - Admin Products
+      summary: Update product (Admin)
+      description: Update an existing product
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                sku:
+                  type: string
+                price:
+                  type: number
+                short_description:
+                  type: string
+                long_description:
+                  type: string
+                category_id:
+                  type: integer
+                in_stock:
+                  type: boolean
+                status:
+                  type: string
+                  enum: [active, inactive]
+                tag:
+                  type: string
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Product not found
+        '500':
+          description: Server error
+
+    delete:
+      tags:
+        - Admin Products
+      summary: Delete product (Admin)
+      description: Delete a product and all related data
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Unauthorized
+        '404':
+          description: Product not found
+        '500':
+          description: Server error
+
+  # ========================================================================
+  # ADMIN - COUPONS
+  # ========================================================================
+  /api/admin/coupons:
+    get:
+      tags:
+        - Admin Coupons
+      summary: List coupons (Admin)
+      description: Get paginated list of discount codes
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 100
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Coupon'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Server error
+
+    post:
+      tags:
+        - Admin Coupons
+      summary: Create coupon (Admin)
+      description: Create a new discount code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+              properties:
+                code:
+                  type: string
+                discount_percent:
+                  type: number
+                  minimum: 0
+                  maximum: 100
+                valid_from:
+                  type: string
+                  format: date-time
+                valid_to:
+                  type: string
+                  format: date-time
+                max_uses:
+                  type: integer
+      responses:
+        '201':
+          description: Coupon created
+        '400':
+          description: Invalid request
+        '409':
+          description: Coupon code already exists
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Server error
+
+    put:
+      tags:
+        - Admin Coupons
+      summary: Update coupon (Admin)
+      description: Update an existing discount code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - discount_id
+              properties:
+                discount_id:
+                  type: integer
+                code:
+                  type: string
+                discount_percent:
+                  type: number
+                valid_from:
+                  type: string
+                  format: date-time
+                valid_to:
+                  type: string
+                  format: date-time
+                max_uses:
+                  type: integer
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Invalid request
+        '404':
+          description: Coupon not found
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Server error
+
+    delete:
+      tags:
+        - Admin Coupons
+      summary: Delete coupon (Admin)
+      description: Delete a discount code
+      parameters:
+        - name: discount_id
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Invalid request
+        '404':
+          description: Coupon not found
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Server error
+
+  # ========================================================================
+  # ADMIN - ANALYTICS
+  # ========================================================================
+  /api/admin/analytics/sales:
+    get:
+      tags:
+        - Admin Analytics
+      summary: Get sales analytics (Admin)
+      description: Get sales analytics including revenue, orders, and trends
+      parameters:
+        - name: days
+          in: query
+          schema:
+            type: integer
+            default: 30
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Server error
+
+  /api/admin/analytics/customers:
+    get:
+      tags:
+        - Admin Analytics
+      summary: Get customer analytics (Admin)
+      description: Get customer statistics and trends
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Server error
+
+  /api/admin/analytics/top-products:
+    get:
+      tags:
+        - Admin Analytics
+      summary: Get top products (Admin)
+      description: Get best-selling products analytics
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Server error
+
+  # ========================================================================
+  # ADMIN - USERS
+  # ========================================================================
+  /api/admin/users:
+    get:
+      tags:
+        - Admin Users
+      summary: List admin/manager users (Admin only)
+      description: Get list of users with admin or manager roles
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Admin access required
+        '500':
+          description: Server error
+
+    post:
+      tags:
+        - Admin Users
+      summary: Assign admin/manager role (Admin only)
+      description: Assign admin or manager role to a user by email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - role
+              properties:
+                email:
+                  type: string
+                role:
+                  type: string
+                  enum: [admin, manager]
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Admin access required
+        '404':
+          description: User not found
+        '500':
+          description: Server error
+
+  /api/admin/users/{userId}:
+    put:
+      tags:
+        - Admin Users
+      summary: Update user role (Admin only)
+      description: Update a user's role
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - role
+              properties:
+                role:
+                  type: string
+                  enum: [admin, manager, customer]
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: User not found
+        '500':
+          description: Server error
+
+    delete:
+      tags:
+        - Admin Users
+      summary: Remove admin/manager role (Admin only)
+      description: Remove admin/manager role from a user (sets to customer)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: User not found
+        '500':
+          description: Server error
+
+  # ========================================================================
+  # ADMIN - AFFILIATES
+  # ========================================================================
+  /api/admin/affiliates:
+    get:
+      tags:
+        - Admin Affiliates
+      summary: List affiliates (Admin)
+      description: Get all affiliates with filters
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected, suspended]
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  affiliates:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Affiliate'
+                  total:
+                    type: integer
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Server error
+
+  # ========================================================================
+  # SEARCH
+  # ========================================================================
+  /api/search:
+    get:
+      tags:
+        - Search
+      summary: Search products
+      description: Advanced product search with filters
+      security: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 12
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+        - name: tag
+          in: query
+          schema:
+            type: string
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [relevance, price_asc, price_desc, newest, name_asc, name_desc]
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  results:
+                    type: array
+                    items:
+                      type: object # Simplified product for search result
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                  filters:
+                    type: object
+        '400':
+          description: Invalid request
+        '500':
+          description: Server error
+
+  # ========================================================================
+  # BLOGS
+  # ========================================================================
+  /api/public-blogs:
+    get:
+      tags:
+        - Blogs
+      summary: List published blogs
+      description: Fetch published blogs for public viewing
+      security: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 6
+        - name: category
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  blogs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Blog'
+                  pagination:
+                    type: object
+        '500':
+          description: Server error
+
+  /api/admin/blogs:
+    get:
+      tags:
+        - Admin Blogs
+      summary: List all blogs (Admin)
+      description: Fetch all blogs (published and draft)
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 12
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [all, published, draft]
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  blogs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Blog'
+                  pagination:
+                    type: object
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Server error
+
+  # ========================================================================
+  # SUBSCRIBERS
+  # ========================================================================
+  /api/subscribers:
+    post:
+      tags:
+        - Subscribers
+      summary: Subscribe to newsletter
+      description: Subscribe authenticated user to newsletter
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Server error
+
+  /api/admin/subscribers:
+    get:
+      tags:
+        - Admin Subscribers
+      summary: List subscribers (Admin)
+      description: Get all newsletter subscribers
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: filter
+          in: query
+          schema:
+            type: string
+            enum: [all, active, unsubscribed]
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Subscriber'
+                  pagination:
+                    type: object
+                  stats:
+                    type: object
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Server error
+
+  # ========================================================================
+  # BANNERS
+  # ========================================================================
+  /api/banners:
+    get:
+      tags:
+        - Banners
+      summary: List active banners
+      description: Get all active banners for public display
+      security: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Banner'
+        '500':
+          description: Server error
+
+  /api/admin/banners:
+    get:
+      tags:
+        - Admin Banners
+      summary: List banners (Admin)
+      description: Get all banners with optional filtering
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive]
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Banner'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Server error
+
+    post:
+      tags:
+        - Admin Banners
+      summary: Create banner (Admin)
+      description: Create a new banner
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+              properties:
+                image:
+                  type: string
+                  format: binary
+                title:
+                  type: string
+                description:
+                  type: string
+                link_url:
+                  type: string
+                display_order:
+                  type: integer
+                status:
+                  type: string
+                  enum: [active, inactive]
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Server error
+
+  # ========================================================================
+  # WEBHOOKS
+  # ========================================================================
+  # ========================================================================
+  # PUBLIC FEATURES
+  # ========================================================================
+  /api/contact:
+    post:
+      tags:
+        - Contact
+      summary: Submit contact form
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactRequest'
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Invalid request
+
+  /api/gallery:
+    get:
+      tags:
+        - Gallery
+      summary: Get gallery items
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GalleryItem'
+
+  /api/popups:
+    get:
+      tags:
+        - Features
+      summary: Get active popup
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Popup'
+
+  /api/featured:
+    get:
+      tags:
+        - Features
+      summary: Get featured products
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  products:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FeaturedProduct'
+
+  /api/premium:
+    get:
+      tags:
+        - Features
+      summary: Get premium/new products
+      responses:
+        '200':
+          description: Success
+
+  # ========================================================================
+  # COMMERCE
+  # ========================================================================
+
+  /api/exchange-rate:
+    get:
+      tags:
+        - Features
+      summary: Get USD exchange rate
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exchange_rate:
+                    type: number
+
+  /api/shiprocket/serviceability:
+    post:
+      tags:
+        - Checkout
+      summary: Check shipping rates
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  couriers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ShiprocketRate'
+
+  # ========================================================================
+  # PAYMENTS
+  # ========================================================================
+  /api/payment/payglocal/initiate:
+    post:
+      tags:
+        - Payments
+      summary: Initiate PayGlocal payment
+      responses:
+        '200':
+          description: Payment initiated
+
+  /api/payment/paypal/initiate:
+    post:
+      tags:
+        - Payments
+      summary: Initiate PayPal payment
+      responses:
+        '200':
+          description: Payment initiated
+
+  # ========================================================================
+  # AFFILIATE
+  # ========================================================================
+  /api/affiliate/stats:
+    get:
+      tags:
+        - Affiliate
+      summary: Get affiliate stats
+      security:
+        - ClerkAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stats:
+                    $ref: '#/components/schemas/AffiliateStats'
+
+  /api/affiliate/links:
+    get:
+      tags:
+        - Affiliate
+      summary: Get referral links
+      responses:
+        '200':
+          description: Success
+
+  /api/affiliate/apply:
+    post:
+      tags:
+        - Affiliate
+      summary: Apply for affiliate program
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AffiliateApplication'
+      responses:
+        '200':
+          description: Application submitted
+
+  /api/affiliate/payouts:
+    get:
+      tags:
+        - Affiliate
+      summary: Get payout history
+      responses:
+        '200':
+          description: Success
+
+  # ========================================================================
+  # ADMIN DEEP DIVE
+  # ========================================================================
+
+
+  /api/admin/orders:
+    get:
+      tags:
+        - Admin
+      summary: List all orders
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AdminOrder'
+                  totalCount:
+                    type: integer
+                  totalPages:
+                    type: integer
+                  currentPage:
+                    type: integer
+
+  /api/admin/loyalty/campaigns:
+    get:
+      tags:
+        - Admin Loyalty
+      summary: List loyalty campaigns
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LoyaltyCampaign'
+
+  /api/admin/manual-shipping/rates:
+    get:
+      tags:
+        - Admin Shipping
+      summary: List shipping rates
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: location_id
+          in: query
+          schema:
+            type: integer
+        - name: weight_band_id
+          in: query
+          schema:
+            type: integer
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+        - name: search
+          in: query
+          schema:
+            type: string
+            description: Search by location name
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      rates:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ShippingRate'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+    post:
+      tags:
+        - Admin Shipping
+      summary: Create or update shipping rate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - location_id
+                - weight_band_id
+                - rate_inr
+              properties:
+                location_id:
+                  type: integer
+                weight_band_id:
+                  type: integer
+                rate_inr:
+                  type: number
+                effective_from:
+                  type: string
+                  format: date-time
+                effective_to:
+                  type: string
+                  format: date-time
+                  nullable: true
+                rate_card_version_id:
+                  type: integer
+                  nullable: true
+                notes:
+                  type: string
+                is_active:
+                  type: boolean
+      responses:
+        '200':
+          description: Success
+
+
